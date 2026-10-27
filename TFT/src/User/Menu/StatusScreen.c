@@ -299,6 +299,12 @@ void menuStatus(void)
 {
   KEY_VALUES key_num = KEY_IDLE;
 
+  if (infoMachineSettings.firmwareType == FW_GRBL)  // CNC status screen for grbl hosts
+  {
+    REPLACE_MENU(menuCncStatus);
+    return;
+  }
+
   GUI_SetBkColor(infoSettings.bg_color);
   menuDrawPage(&statusItems);
   GUI_SetColor(GANTRY_XYZ_BG_COLOR);
@@ -309,6 +315,12 @@ void menuStatus(void)
 
   while (MENU_IS(menuStatus))
   {
+    if (infoMachineSettings.firmwareType == FW_GRBL)  // a grbl host was just detected
+    {
+      REPLACE_MENU(menuCncStatus);
+      break;
+    }
+
     if (infoHost.connected != lastConnectionStatus)
     {
       statusSetReady();

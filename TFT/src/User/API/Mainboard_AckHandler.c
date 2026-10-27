@@ -359,6 +359,42 @@ static inline void hostActionCommands(void)
   }
 }
 
+// return "true" if the message must not be displayed in Terminal menu
+static bool grblParseAck(void)
+{
+  if (ack_starts_with("ok"))
+  {
+    InfoHost_HandleAckOk(infoHost.target_tx_slots);
+  }
+  else if (ack_cache[0] == '<')  // status report, polled continuously so never flood the terminal
+  {
+    grblParseStatus(ack_cache);
+
+    return true;
+  }
+  else if (ack_starts_with("error:"))  // grbl replies "error:N" instead of "ok" to a rejected line
+  {
+    InfoHost_HandleAckOk(infoHost.target_tx_slots);
+    grblHandleError(ack_cache);
+  }
+  else if (ack_starts_with("ALARM:"))
+  {
+    grblHandleAlarm(ack_cache);
+  }
+  else if (ack_starts_with("[MSG:"))
+  {
+    ack_cache[strcspn(ack_cache, "]\r\n")] = '\0';
+    statusSetMsg("grbl", ack_cache + ack_index);
+    addToast(DIALOG_TYPE_INFO, ack_cache + ack_index);
+  }
+  else if (ack_starts_with("Grbl"))  // welcome message, sent after a (soft) reset
+  {
+    grblHandleReset();
+  }
+
+  return false;
+}
+
 void parseAck(void)
 {
   while (Serial_DataAvailableRX(SERIAL_PORT) && (ack_len = Serial_Get(SERIAL_PORT, ack_cache, ACK_CACHE_SIZE)) != 0)  // if some data have been retrieved
@@ -374,6 +410,25 @@ void parseAck(void)
     InfoHost_UpdateAckTimestamp();  // update last received ACK message timestamp
 
     bool avoid_terminal = false;
+
+    //----------------------------------------
+    // grbl / grblHAL handling
+    //----------------------------------------
+
+    // grbl answers the M105 connection probe with "error:20", or is detected by its welcome or status messages
+    if (infoHost.connected == false && grblIsResponse(ack_cache))
+    {
+      grblConnect();
+
+      goto parse_end;  // don't popup the error reply to the connection probe
+    }
+
+    if (infoMachineSettings.firmwareType == FW_GRBL && infoHost.connected)
+    {
+      avoid_terminal = grblParseAck();
+
+      goto parse_end;
+    }
 
     //----------------------------------------
     // TFT to printer connection handling

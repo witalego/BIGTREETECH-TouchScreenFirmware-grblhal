@@ -110,7 +110,7 @@ void coordinateGetAllActual(COORDINATE * tmp)
 
 float coordinateGetAxis(AXIS axis)
 {
-  if (infoFile.source >= FS_ONBOARD_MEDIA)
+  if (infoFile.source >= FS_ONBOARD_MEDIA || infoMachineSettings.firmwareType == FW_GRBL)  // grbl position comes from status reports
     return coordinateGetAxisActual(axis);
 
   return coordinateGetAxisTarget(axis);
@@ -128,7 +128,8 @@ void coordinateQueryClearSendingWaiting(void)
  */
 void coordinateQuery(uint8_t seconds)
 { // following conditions ordered by importance
-  if (!coordSendingWaiting && infoHost.tx_slots != 0 && infoHost.connected && infoMachineSettings.firmwareType != FW_REPRAPFW)
+  if (!coordSendingWaiting && infoHost.tx_slots != 0 && infoHost.connected && infoMachineSettings.firmwareType != FW_REPRAPFW &&
+      infoMachineSettings.firmwareType != FW_GRBL)
   {
     if (infoMachineSettings.autoReportPos == 1)  // if auto report is enabled
     {

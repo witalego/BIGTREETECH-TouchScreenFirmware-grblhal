@@ -654,6 +654,20 @@ void sendQueueCmd(void)
 
   bool fromTFT = getCmd();  // retrieve leading gcode in the queue and check if it is originated by TFT or other hosts
 
+  if (infoMachineSettings.firmwareType == FW_GRBL)  // no Marlin specific parsing, just translate or purge the gcode
+  {
+    if (!grblFilterCmd(&cmd_ptr[cmd_base_index]))
+    {
+      sendCmd(true, avoid_terminal);  // purge the command
+
+      return;
+    }
+
+    cmd_len = strlen(cmd_ptr);
+
+    goto send_cmd;
+  }
+
   #ifdef SERIAL_PORT_2
     if (writing_mode != NO_WRITING)  // if writing mode (previously triggered by M28)
     {

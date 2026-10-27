@@ -440,6 +440,11 @@ static inline void drawPrintInfo(void)
   GUI_RestoreColorDefault();
 }
 
+const char * getPrintingTitle(void)
+{
+  return title;
+}
+
 void printSummaryPopup(void)
 {
   char showInfo[300];
@@ -511,6 +516,12 @@ void menuPrinting(void)
   bool layerDrawEnabled = false;
   bool lastPause = isPaused();
   bool lastPrinting = isPrinting();
+
+  if (infoMachineSettings.firmwareType == FW_GRBL)  // CNC job screen for grbl hosts
+  {
+    REPLACE_MENU(menuCncJob);
+    return;
+  }
 
   memset(&nowHeat, 0, sizeof(HEATER));
 

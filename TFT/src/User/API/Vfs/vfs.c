@@ -182,7 +182,21 @@ static char * isSupportedFile(const char * filename)
 {
   char * extPos = strrchr(filename, '.');  // check last "." in the name where extension is supposed to start
 
-  return (extPos != NULL && (extPos[1] == 'g' || extPos[1] == 'G')) ? extPos : NULL;
+  if (extPos == NULL)
+    return NULL;
+
+  // gcode (.g*) and CNC (.nc, .ngc, .tap, .cnc) files
+  switch (extPos[1])
+  {
+    case 'g': case 'G':
+    case 'n': case 'N':
+    case 't': case 'T':
+    case 'c': case 'C':
+      return extPos;
+
+    default:
+      return NULL;
+  }
 }
 
 // add a file name or folder name to file list

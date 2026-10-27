@@ -237,6 +237,16 @@ void setupMachine(FW_TYPE fwType)
 
   infoMachineSettings.firmwareType = fwType;
 
+  if (fwType == FW_GRBL)  // grbl has no printer features and doesn't understand the Marlin setup gcodes
+  {
+    infoMachineSettings.onboardSD = DISABLED;
+    infoMachineSettings.softwareEndstops = DISABLED;
+    infoMachineSettings.zProbe = DISABLED;
+    infoMachineSettings.levelingData = DISABLED;
+
+    return;
+  }
+
   #if BED_LEVELING_TYPE > 1  // if not disabled and not auto-detect
     #if BED_LEVELING_TYPE == 2
       infoMachineSettings.leveling = BL_ABL;

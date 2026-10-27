@@ -15,6 +15,7 @@ void startPrinting(void);
 
 void printSummaryPopup(void);
 void menuPrinting(void);
+const char * getPrintingTitle(void);  // title (file name) of the current print
 
 #ifdef __cplusplus
 }

@@ -78,16 +78,23 @@ void loopBackEnd(void)
     popupDialog(DIALOG_TYPE_ERROR, LABEL_TIMEOUT_REACHED, tempMsg, LABEL_CONFIRM, LABEL_RESUME, NULL, heatClearWaiting, NULL);
   }
 
-  // fan speed monitor
-  loopCheckFan();
-
-  // speed & flow monitor
-  loopCheckSpeed();
-
-  if (infoMachineSettings.firmwareType != FW_REPRAPFW)
-    loopCheckHeater();  // temperature monitor
+  if (infoMachineSettings.firmwareType == FW_GRBL)
+  {
+    grblStatusQuery();  // query grbl status (position, state, overrides)
+  }
   else
-    rrfStatusQuery();  // query RRF status
+  {
+    // fan speed monitor
+    loopCheckFan();
+
+    // speed & flow monitor
+    loopCheckSpeed();
+
+    if (infoMachineSettings.firmwareType != FW_REPRAPFW)
+      loopCheckHeater();  // temperature monitor
+    else
+      rrfStatusQuery();  // query RRF status
+  }
 
   // handle a print from (remote) onboard media, if any
   if (infoMachineSettings.onboardSD == ENABLED)

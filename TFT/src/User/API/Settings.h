@@ -317,6 +317,7 @@ typedef enum
   FW_KLIPPER,
   FW_SMOOTHIEWARE,
   FW_UNKNOWN,
+  FW_GRBL,  // grbl / grblHAL (CNC)
 } FW_TYPE;
 
 // Bed Leveling type

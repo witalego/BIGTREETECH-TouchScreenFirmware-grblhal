@@ -30,6 +30,7 @@ static float lastEPos = 0;                 // used only to update stats in infoP
 
 static uint32_t nextUpdateTime = 0;
 static bool sendingWaiting = false;
+static bool grblEndSync = false;           // grbl: end of file reached, waiting for the queued motions to complete
 
 void setExtrusionDuringPause(bool extruded)
 {
@@ -363,6 +364,7 @@ void updatePrintUsedFilament(void)
 
 void clearInfoPrint(void)
 {
+  grblEndSync = false;
   memset(&infoPrinting, 0, sizeof(PRINTING));
 }
 
@@ -566,6 +568,14 @@ void abortPrint(void)
   {
     case FS_TFT_SD:
     case FS_TFT_USB:
+      if (infoMachineSettings.firmwareType == FW_GRBL)
+      {
+        grblStopJob();  // feed hold + soft reset. grbl flushes its buffers and stops the spindle
+        setPrintAbort();
+
+        loopDetected = false;  // finally, remove lock and exit
+        return;
+      }
       break;
 
     case FS_ONBOARD_MEDIA:
@@ -617,6 +627,15 @@ bool pausePrint(bool isPause, PAUSE_TYPE pauseType)
   {
     case FS_TFT_SD:
     case FS_TFT_USB:
+      if (infoMachineSettings.firmwareType == FW_GRBL)  // grbl decelerates and keeps its buffers on feed hold
+      {
+        grblSendRealtime(isPause ? GRBL_RT_FEED_HOLD : GRBL_RT_CYCLE_START);
+
+        if (isPause)
+          infoPrinting.pauseType = pauseType;
+        break;
+      }
+
       if (isPause == true && pauseType == PAUSE_M0)
       {
         // update pause status just to block command queue feeding with gcodes from TFT media avoiding
@@ -914,6 +933,21 @@ void loopPrintFromTFT(void)
 
   if (ip_cur == ip_size)  // in case of end of gcode file, finalize the print
   {
+    if (infoMachineSettings.firmwareType == FW_GRBL)
+    { // grbl acknowledges a line once it's planned, so wait until the last motion is completed.
+      // G4 is acknowledged only after the planner buffer is empty
+      if (!grblEndSync)
+      {
+        grblEndSync = storeCmd("G4 P0.01\n");
+        return;
+      }
+
+      if (!isIdleCmdQueue())
+        return;
+
+      grblEndSync = false;
+    }
+
     endPrint();
   }
   else if (ip_cur > ip_size)  // in case of print abort (ip_cur == ip_size + 1), display an error message and abort the print

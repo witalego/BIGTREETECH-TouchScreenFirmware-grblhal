@@ -63,7 +63,8 @@ void speedQueryClearSendingWaiting(void)
 
 void speedQuery(void)
 { // following conditions ordered by importance
-  if (!speedSendingWaiting && infoHost.tx_slots != 0 && infoHost.connected && infoMachineSettings.firmwareType != FW_REPRAPFW)
+  if (!speedSendingWaiting && infoHost.tx_slots != 0 && infoHost.connected && infoMachineSettings.firmwareType != FW_REPRAPFW &&
+      infoMachineSettings.firmwareType != FW_GRBL)
   {
     speedSendingWaiting = storeCmd("M220\n");
 

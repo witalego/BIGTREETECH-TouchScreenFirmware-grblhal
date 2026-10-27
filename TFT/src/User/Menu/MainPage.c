@@ -26,6 +26,12 @@ void menuMain(void)
 
   KEY_VALUES key_num = KEY_IDLE;
 
+  if (infoMachineSettings.firmwareType == FW_GRBL)  // CNC main menu for grbl hosts
+  {
+    REPLACE_MENU(menuCncMenu);
+    return;
+  }
+
   if (infoMachineSettings.firmwareType == FW_REPRAPFW)
     mainPageItems.items[5].label.index = LABEL_MACROS;
 
@@ -63,7 +69,10 @@ void menuMain(void)
         // Emergency Stop : Used for emergency stopping, a reset is required to return to operational mode.
         // it may need to wait for a space to open up in the command queue.
         // Enable EMERGENCY_PARSER in Marlin Firmware for an instantaneous M112 command.
-        sendEmergencyCmd("M112\n");
+        if (infoMachineSettings.firmwareType == FW_GRBL)
+          grblEmergencyStop();
+        else
+          sendEmergencyCmd("M112\n");
         break;
 
       case KEY_ICON_4:
